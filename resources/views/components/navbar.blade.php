@@ -1,0 +1,37 @@
+<!-- Topbar Navbar -->
+<ul class="navbar-nav ml-auto">
+
+    <!-- Dropdown - Messages -->
+    <div class="dropdown-menu dropdown-menu-right p-3 shadow animated--grow-in" aria-labelledby="searchDropdown">
+    </div>
+    </li>
+
+    <!-- Nav Item - User Information -->
+    <li class="nav-item dropdown no-arrow">
+        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown"
+            aria-haspopup="true" aria-expanded="false">
+            <span class="mr-2 d-none d-lg-inline text-gray-600 small">Hello {{ auth()->user()->nama }}</span>
+            <img class="img-profile rounded-circle" src="/img/undraw_profile.svg">
+        </a>
+        <!-- Dropdown - User Information -->
+        <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="userDropdown">
+            @if (auth()->user()->role === 'admin')
+                <a class="dropdown-item" href="{{ route('users.index') }}">
+                    <i class="fas fa-list fa-sm fa-fw mr-2 text-gray-400"></i>
+                    Kelola User
+                </a>
+            @endif
+            <div class="dropdown-divider"></div>
+            <form method="POST" action="{{ route('logout') }}">
+                @csrf
+                <button class="dropdown-item" type="submit">
+                    <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i> Logout
+                </button>
+            </form>
+        </div>
+    </li>
+
+</ul>
+
+</nav>
+<!-- End of Topbar -->

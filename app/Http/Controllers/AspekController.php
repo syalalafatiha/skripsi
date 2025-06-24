@@ -59,7 +59,7 @@ class AspekController extends Controller
     }
 
     /**
-     * Mengupdate data mahasiswa
+     * Mengupdate data aspek
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  int  $id

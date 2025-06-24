@@ -45,19 +45,4 @@ class Aspek extends Model
     {
         return $this->hasMany(SubKriteria::class);
     }
-
-    // public function hitungs()
-    // {
-    //     return $this->hasMany(Hitung::class);
-    // }
-
-    public function gaps()
-    {
-        return $this->hasMany(Gap::class);
-    }
-
-    public function ideals()
-    {
-        return $this->hasMany(Ideal::class);
-    }
 }

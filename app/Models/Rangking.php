@@ -19,8 +19,8 @@ class Rangking extends Model
         return $this->belongsTo(Mahasiswa::class);
     }
 
-    public function gap_kompetensi()
-    {
-        return $this->belongsTo(Gap::class);
-    }
+    // public function gap_kompetensi()
+    // {
+    //     return $this->belongsTo(Gap::class);
+    // }
 }

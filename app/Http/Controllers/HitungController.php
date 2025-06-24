@@ -3,11 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Aspek;
-use App\Models\Gap;
 use App\Models\Hitung;
 use App\Models\Kriteria;
 use App\Models\Mahasiswa;
-use App\Models\Rangking;
 use App\Models\SubKriteria;
 use Illuminate\Http\Request;
 
@@ -29,7 +27,7 @@ class HitungController extends Controller
     }
 
     /**
-     * Store calculated data to the database.
+     * Store calculated data to the database. 
      */
     public function store(Request $request)
     {
@@ -59,9 +57,55 @@ class HitungController extends Controller
         return redirect()->route('hitung.show')->with('success', 'Data berhasil dihitung dan disimpan.');
     }
 
-    /**
-     * Hitung nilai Gap.
-     */
+    public function edit($id)
+    {
+        $mahasiswa = Mahasiswa::findOrFail($id);
+        $kriterias = Kriteria::all();
+        $sub_kriteriasGrouped = SubKriteria::with('kriteria')->get()->groupBy('kriteria_id');
+
+        // Ambil data hitung sebelumnya
+        $nilaiMahasiswa = Hitung::where('mahasiswa_id', $id)->get()->keyBy('kriteria_id');
+
+        $title = 'Edit Seleksi Mahasiswa';
+
+        return view('penilaian.edit', compact('title', 'mahasiswa', 'kriterias', 'sub_kriteriasGrouped', 'nilaiMahasiswa'));
+    }
+
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'mahasiswa_id' => 'required|exists:mahasiswas,id',
+        ]);
+
+        $mahasiswa_id = $request->input('mahasiswa_id');
+        $nilai_kriterias = $request->except(['_token', '_method', 'mahasiswa_id']);
+
+        // Hapus nilai lama
+        Hitung::where('mahasiswa_id', $mahasiswa_id)->delete();
+
+        // Simpan nilai baru
+        foreach ($nilai_kriterias as $kriteria => $sub_kriteriaId) {
+            $sub_kriteria = SubKriteria::findOrFail($sub_kriteriaId);
+            $kriteria_id = $sub_kriteria->kriteria_id;
+            $aspek_id = $sub_kriteria->kriteria->aspek_id;
+
+            Hitung::create([
+                'mahasiswa_id' => $mahasiswa_id,
+                'aspek_id' => $aspek_id,
+                'kriteria_id' => $kriteria_id,
+                'sub_kriteria_id' => $sub_kriteriaId,
+                'nilai' => $sub_kriteria->nilai,
+            ]);
+        }
+
+        // Hitung ulang dari awal
+        $this->hitungGap($mahasiswa_id);
+        $this->hasil();       // Hitung core/secondary dan nilai total
+        $this->rangking();    // Hitung ranking semua mahasiswa
+
+        return redirect()->route('hitung.show')->with('success', 'Data berhasil diperbarui dan dihitung ulang.');
+    }
+
     public function hitungGap($mahasiswa_id)
     {
         $dataHitung = Hitung::with('kriteria', 'mahasiswa')
@@ -310,7 +354,6 @@ class HitungController extends Controller
                 $bobotAspek = $aspekValue->bobot;
                 $hitungData = $hitung->where('mahasiswa_id', $mahasiswaId)->where('aspek_id', $aspekValue->id)->first();
 
-                // Pastikan data hitung tidak null sebelum mengakses nilai_total
                 if (!$hitungData) {
                     continue;
                 }
@@ -321,8 +364,11 @@ class HitungController extends Controller
 
             $mahasiswa = Mahasiswa::find($mahasiswaId);
             if (!$mahasiswa) {
-                continue; // Skip jika mahasiswa tidak ditemukan
+                continue;
             }
+
+            // Tentukan status kelayakan berdasarkan nilai ranking
+            $statusKelayakan = $nilaiTotal >= 3.76 ? 'Memenuhi' : 'Tidak Memenuhi';
 
             $ranking[] = [
                 'mahasiswa_id' => $mahasiswa->id,
@@ -333,6 +379,7 @@ class HitungController extends Controller
                 'ukt_mahasiswa' => $mahasiswa->ukt,
                 'ranking' => $nilaiTotal,
                 'status_mahasiswa' => $mahasiswa->status,
+                'status_kelayakan' => $statusKelayakan,
             ];
 
             // Simpan nilai ranking ke tabel `hitung`
@@ -350,6 +397,11 @@ class HitungController extends Controller
         foreach ($ranking as $key => $value) {
             $ranking[$key]['urutan'] = $key + 1;
         }
+
+        // Urutkan status kelayakan secara terpisah seperti urutan ranking
+        usort($ranking, function ($a, $b) {
+            return strcmp($b['status_kelayakan'], $a['status_kelayakan']);
+        });
 
         return view('rangking.index', compact('title', 'ranking'));
     }

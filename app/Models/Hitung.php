@@ -49,14 +49,4 @@ class Hitung extends Model
         $kriteria = Kriteria::find($this->kriteria_id);
         $this->attributes['nilai_target'] = $kriteria->nilai_target;
     }
-
-    // public function getNamaKriteriaAttribute()
-    // {
-    //     return $this->kriteria->kriteria;
-    // }
-
-    public function gap()
-    {
-        return $this->hasOne(Gap::class);
-    }
 }
